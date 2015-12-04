@@ -33,6 +33,7 @@ module Type.Class.Known where
 
 import Type.Family.Constraint
 
+import Data.Proxy
 import Data.Type.Equality
 
 -- | Each instance of 'Known' provides a canonical construction
@@ -48,3 +49,6 @@ instance (a ~ b) => Known ((:~:) a) b where
   type KnownC ((:~:) a) b = (a ~ b)
   known = Refl
 
+-- | The 'Proxy' is the canonical constructor for any @'Proxy' a@.
+instance Known Proxy a where
+  known = Proxy
