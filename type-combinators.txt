@@ -490,10 +490,6 @@ newtype Join f a
 Join :: f a a -> Join f a
 [getJoin] :: Join f a -> f a a
 mapJoin :: (f a a -> g b b) -> Join f a -> Join g b
-newtype Ap f g a
-Ap :: f (g a) a -> Ap f g a
-[getAp] :: Ap f g a -> f (g a) a
-mapAp :: (f (g a) a -> h (k b) b) -> Ap f g a -> Ap h k b
 instance forall (k :: BOX) (k1 :: BOX) (p :: k -> k1 -> *) (b :: k1) (a :: k). GHC.Read.Read (p a b) => GHC.Read.Read (Data.Type.Combinator.Flip p b a)
 instance forall (k :: BOX) (k1 :: BOX) (p :: k -> k1 -> *) (b :: k1) (a :: k). GHC.Show.Show (p a b) => GHC.Show.Show (Data.Type.Combinator.Flip p b a)
 instance forall (k :: BOX) (k1 :: BOX) (p :: k -> k1 -> *) (b :: k1) (a :: k). GHC.Classes.Ord (p a b) => GHC.Classes.Ord (Data.Type.Combinator.Flip p b a)
@@ -535,10 +531,6 @@ instance forall (k :: BOX) (f :: k -> k -> *) (a :: k). GHC.Classes.Eq (f a a) =
 instance forall (k :: BOX) (f :: k -> k -> *) (a :: k). GHC.Classes.Ord (f a a) => GHC.Classes.Ord (Data.Type.Combinator.Join f a)
 instance forall (k :: BOX) (f :: k -> k -> *) (a :: k). GHC.Show.Show (f a a) => GHC.Show.Show (Data.Type.Combinator.Join f a)
 instance forall (k :: BOX) (f :: k -> k -> *) (a :: k). GHC.Read.Read (f a a) => GHC.Read.Read (Data.Type.Combinator.Join f a)
-instance forall (k :: BOX) (k1 :: BOX) (f :: k -> k1 -> *) (g :: k1 -> k) (a :: k1). GHC.Classes.Eq (f (g a) a) => GHC.Classes.Eq (Data.Type.Combinator.Ap f g a)
-instance forall (k :: BOX) (k1 :: BOX) (f :: k -> k1 -> *) (g :: k1 -> k) (a :: k1). GHC.Classes.Ord (f (g a) a) => GHC.Classes.Ord (Data.Type.Combinator.Ap f g a)
-instance forall (k :: BOX) (k1 :: BOX) (f :: k -> k1 -> *) (g :: k1 -> k) (a :: k1). GHC.Show.Show (f (g a) a) => GHC.Show.Show (Data.Type.Combinator.Ap f g a)
-instance forall (k :: BOX) (k1 :: BOX) (f :: k -> k1 -> *) (g :: k1 -> k) (a :: k1). GHC.Read.Read (f (g a) a) => GHC.Read.Read (Data.Type.Combinator.Ap f g a)
 instance forall (k :: BOX) (k1 :: BOX) (f :: k1 -> *) (g :: k -> k1). Type.Class.Higher.Eq1 f => Type.Class.Higher.Eq1 (f Data.Type.Combinator.:.: g)
 instance forall (k :: BOX) (k1 :: BOX) (f :: k1 -> *) (g :: k -> k1). Type.Class.Higher.Ord1 f => Type.Class.Higher.Ord1 (f Data.Type.Combinator.:.: g)
 instance forall (k :: BOX) (k1 :: BOX) (f :: k1 -> *) (g :: k -> k1). Type.Class.Higher.Show1 f => Type.Class.Higher.Show1 (f Data.Type.Combinator.:.: g)
@@ -573,12 +565,6 @@ instance forall (k :: BOX) (f :: k -> k -> *). Type.Class.Higher.Ord2 f => Type.
 instance forall (k :: BOX) (f :: k -> k -> *). Type.Class.Higher.Show2 f => Type.Class.Higher.Show1 (Data.Type.Combinator.Join f)
 instance forall (k :: BOX) (f :: k -> k -> *) (a :: k). Type.Class.Known.Known (f a) a => Type.Class.Known.Known (Data.Type.Combinator.Join f) a
 instance forall (k :: BOX) (p :: GHC.Prim.Constraint) (q :: GHC.Prim.Constraint) (f :: k -> k -> *) (a :: k). Type.Class.Witness.Witness p q (f a a) => Type.Class.Witness.Witness p q (Data.Type.Combinator.Join f a)
-instance forall (k :: BOX) (k1 :: BOX) (f :: k1 -> k -> *) (g :: k -> k1). Type.Class.Higher.Eq2 f => Type.Class.Higher.Eq1 (Data.Type.Combinator.Ap f g)
-instance forall (k :: BOX) (k1 :: BOX) (f :: k1 -> k -> *). Type.Class.Higher.Eq2 f => Type.Class.Higher.Eq2 (Data.Type.Combinator.Ap f)
-instance forall (k :: BOX) (k1 :: BOX) (f :: k1 -> k -> *) (g :: k -> k1). Type.Class.Higher.Ord2 f => Type.Class.Higher.Ord1 (Data.Type.Combinator.Ap f g)
-instance forall (k :: BOX) (k1 :: BOX) (f :: k1 -> k -> *). Type.Class.Higher.Ord2 f => Type.Class.Higher.Ord2 (Data.Type.Combinator.Ap f)
-instance forall (k :: BOX) (k1 :: BOX) (f :: k1 -> k -> *) (g :: k -> k1). Type.Class.Higher.Show2 f => Type.Class.Higher.Show1 (Data.Type.Combinator.Ap f g)
-instance forall (k :: BOX) (k1 :: BOX) (f :: k1 -> k -> *). Type.Class.Higher.Show2 f => Type.Class.Higher.Show2 (Data.Type.Combinator.Ap f)
 
 
 -- | Two type combinators for working with disjunctions: A <i>branch</i>
@@ -972,6 +958,7 @@ curry' :: (l ~ (a :< as)) => (Prod f l -> r) -> f a -> Prod f as -> r
 index :: Index as a -> Prod f as -> f a
 select :: Prod (Index as) bs -> Prod f as -> Prod f bs
 indexes :: Known Length as => Prod (Index as) as
+indexes' :: Length as -> Prod (Index as) as
 instance forall (k :: BOX) (f :: k -> *) (as :: [k]). Type.Family.List.ListC (GHC.Classes.Eq Type.Family.List.<$> (f Type.Family.List.<$> as)) => GHC.Classes.Eq (Data.Type.Product.Prod f as)
 instance forall (k :: BOX) (f :: k -> *) (as :: [k]). (Type.Family.List.ListC (GHC.Classes.Eq Type.Family.List.<$> (f Type.Family.List.<$> as)), Type.Family.List.ListC (GHC.Classes.Ord Type.Family.List.<$> (f Type.Family.List.<$> as))) => GHC.Classes.Ord (Data.Type.Product.Prod f as)
 instance forall (k :: BOX) (f :: k -> *) (as :: [k]). Type.Family.List.ListC (GHC.Show.Show Type.Family.List.<$> (f Type.Family.List.<$> as)) => GHC.Show.Show (Data.Type.Product.Prod f as)
