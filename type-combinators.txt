@@ -44,11 +44,7 @@ module Type.Class.Known
 --   Useful for working with singleton-esque GADTs.
 class KnownC f a => Known (f :: k -> *) (a :: k) where type family KnownC f a :: Constraint KnownC (f :: k -> *) (a :: k) = ØC
 known :: Known f a => f a
-
--- | The <a>Proxy</a> is the canonical constructor for any <tt><a>Proxy</a>
---   a</tt>.
 instance forall (k :: BOX) (a :: k) (b :: k). (a ~ b) => Type.Class.Known.Known ((Data.Type.Equality.:~:) a) b
-instance forall (k :: BOX) (a :: k). Type.Class.Known.Known Data.Proxy.Proxy a
 
 
 -- | A type <tt>t</tt> that is a <tt><a>Witness</a> p q t</tt> provides a
