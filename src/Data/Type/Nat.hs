@@ -28,7 +28,10 @@
 
 module Data.Type.Nat where
 
+import Data.Type.Boolean
 import Data.Type.Equality
+import Data.Type.Quantifier
+import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Constraint
@@ -42,6 +45,20 @@ data Nat :: N -> * where
 deriving instance Eq   (Nat n)
 deriving instance Ord  (Nat n)
 deriving instance Show (Nat n)
+
+instance Eq1   Nat
+instance Ord1  Nat
+instance Show1 Nat
+
+instance Read1 Nat where
+  readsPrec1 d = readParen (d > 10) $ \s0 ->
+    [ (Some Z_,s1)
+    | ("Z_",s1) <- lex s0
+    ] ++
+    [ (n >>- Some . S_,s2)
+    | ("S_",s1) <- lex s0
+    , (n,s2) <- readsPrec1 11 s1
+    ]
 
 -- | @'Z_'@ is the canonical construction of a @'Nat' Z@.
 instance Known Nat Z where
@@ -69,16 +86,20 @@ instance TestEquality Nat where
       Z_   -> Nothing
       S_ y -> testEquality x y //? qed
 
-{-
-instance DecEquality Nat where
-  decideEquality = \case
+instance BoolEquality Nat where
+  (.==) = \case
     Z_ -> \case
-      Z_   -> Proven  _Z
-      S_ _ -> Refuted _ZneS
+      Z_   -> True_
+      S_ _ -> False_
     S_ x -> \case
-      Z_   -> Refuted $ _ZneS . sym
-      S_ y -> (_S <-> _s) <?> decideEquality x y
--}
+      Z_   -> False_
+      S_ y -> x .== y
+
+pred' :: Nat (S x) -> Nat x
+pred' (S_ x) = x
+
+onNatPred :: (Nat x -> Nat y) -> Nat (S x) -> Nat (S y)
+onNatPred f (S_ x) = S_ $ f x
 
 _Z :: Z :~: Z
 _Z = Refl
@@ -133,28 +154,4 @@ natVal :: Nat n -> Int
 natVal = \case
   Z_   -> 0
   S_ x -> succ $ natVal x
-
-n0  :: Nat N0
-n1  :: Nat N1
-n2  :: Nat N2
-n3  :: Nat N3
-n4  :: Nat N4
-n5  :: Nat N5
-n6  :: Nat N6
-n7  :: Nat N7
-n8  :: Nat N8
-n9  :: Nat N9
-n10 :: Nat N10
-
-n0  = Z_
-n1  = S_ n0
-n2  = S_ n1
-n3  = S_ n2
-n4  = S_ n3
-n5  = S_ n4
-n6  = S_ n5
-n7  = S_ n6
-n8  = S_ n7
-n9  = S_ n8
-n10 = S_ n9
 

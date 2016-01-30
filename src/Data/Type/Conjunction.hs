@@ -32,10 +32,11 @@
 
 module Data.Type.Conjunction where
 
-import Type.Class.HFunctor
+import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Tuple
+import Data.Type.Boolean
 
 -- (:&:) {{{
 
@@ -46,6 +47,19 @@ infixr 5 :&:
 deriving instance (Eq   (f a), Eq   (g a)) => Eq   ((f :&: g) a)
 deriving instance (Ord  (f a), Ord  (g a)) => Ord  ((f :&: g) a)
 deriving instance (Show (f a), Show (g a)) => Show ((f :&: g) a)
+deriving instance (Read (f a), Read (g a)) => Read ((f :&: g) a)
+
+instance (Eq1 f, Eq1 g) => Eq1 (f :&: g) where
+  eq1 (a :&: b) (c :&: d) = a =#= c && b =#= d
+
+instance (Ord1 f, Ord1 g) => Ord1 (f :&: g) where
+  compare1 (a :&: b) (c :&: d) = compare1 a c `mappend` compare1 b d
+
+instance (Show1 f, Show1 g) => Show1 (f :&: g) where
+  showsPrec1 d (a :&: b) = showParen (d > 5)
+    $ showsPrec1 11 a
+    . showString " :&: "
+    . showsPrec1 11 b
 
 fanFst :: (f :&: g) a -> f a
 fanFst (a :&: _) = a
@@ -66,35 +80,24 @@ uncurryFan f (a :&: b) = f a b
 curryFan :: ((f :&: g) a -> r) -> f a -> g a -> r
 curryFan f a b = f (a :&: b)
 
-instance DecEquality f => DecEquality (f :&: g) where
-  decideEquality (a :&: _) (c :&: _) = decideEquality a c
-
 instance (Known f a, Known g a) => Known (f :&: g) a where
   known = known :&: known
 
-instance HFunctor ((:&:) f) where
-  map' f (a :&: b) = a :&: f b
+instance Functor1 ((:&:) f) where
+  map1 f (a :&: b) = a :&: f b
 
-instance HFoldable ((:&:) f) where
-  foldMap' f (_ :&: b) = f b
+instance Foldable1 ((:&:) f) where
+  foldMap1 f (_ :&: b) = f b
 
-instance HTraversable ((:&:) f) where
-  traverse' f (a :&: b) = (:&:) a <$> f b
+instance Traversable1 ((:&:) f) where
+  traverse1 f (a :&: b) = (:&:) a <$> f b
 
-instance HBifunctor (:&:) where
-  bimap' f g (a :&: b) = f a :&: g b
+instance Bifunctor1 (:&:) where
+  bimap1 f g (a :&: b) = f a :&: g b
 
 instance (Witness p q (f a), Witness s t (g a)) => Witness (p,s) (q,t) ((f :&: g) a) where
   type WitnessC (p,s) (q,t) ((f :&: g) a) = (Witness p q (f a), Witness s t (g a))
   r \\ a :&: b = r \\ a \\ b
-
-{-
-instance Witness p q (f a) => Witness p q (WitFst (:&:) f g a) where
-  r \\ WitFst (a :&: _) = r \\ a
-
-instance Witness p q (g a) => Witness p q (WitSnd (:&:) f g a) where
-  r \\ WitSnd (_ :&: b) = r \\ b
--}
 
 -- }}}
 
@@ -107,6 +110,19 @@ infixr 5 :*:
 deriving instance (Eq   (f (Fst p)), Eq   (g (Snd p))) => Eq   ((f :*: g) p)
 deriving instance (Ord  (f (Fst p)), Ord  (g (Snd p))) => Ord  ((f :*: g) p)
 deriving instance (Show (f (Fst p)), Show (g (Snd p))) => Show ((f :*: g) p)
+deriving instance (p ~ (a#b), Read (f a), Read (g b)) => Read ((f :*: g) p)
+
+instance (Eq1 f, Eq1 g) => Eq1 (f :*: g) where
+  eq1 (a :*: b) (c :*: d) = a =#= c && b =#= d
+
+instance (Ord1 f, Ord1 g) => Ord1 (f :*: g) where
+  compare1 (a :*: b) (c :*: d) = compare1 a c `mappend` compare1 b d
+
+instance (Show1 f, Show1 g) => Show1 (f :*: g) where
+  showsPrec1 d (a :*: b) = showParen (d > 5)
+    $ showsPrec1 11 a
+    . showString " :*: "
+    . showsPrec1 11 b
 
 parFst :: (f :*: g) p -> f (Fst p)
 parFst (a :*: _) = a
@@ -123,23 +139,28 @@ curryPar f a b = f (a :*: b)
 instance (p ~ (a#b), Known f a, Known g b) => Known (f :*: g) p where
   known = known :*: known
 
-instance HFunctor ((:*:) f) where
-  map' f (a :*: b) = a :*: f b
+instance Functor1 ((:*:) f) where
+  map1 f (a :*: b) = a :*: f b
 
-instance HFoldable ((:*:) f) where
-  foldMap' f (_ :*: b) = f b
+instance Foldable1 ((:*:) f) where
+  foldMap1 f (_ :*: b) = f b
 
-instance HTraversable ((:*:) f) where
-  traverse' f (a :*: b) = (:*:) a <$> f b
+instance Traversable1 ((:*:) f) where
+  traverse1 f (a :*: b) = (:*:) a <$> f b
 
-instance HBifunctor (:*:) where
-  bimap' f g (a :*: b) = f a :*: g b
+instance Bifunctor1 (:*:) where
+  bimap1 f g (a :*: b) = f a :*: g b
 
 _fst :: (a#b) :~: (c#d) -> a :~: c
 _fst Refl = Refl
 
 _snd :: (a#b) :~: (c#d) -> b :~: d
 _snd Refl = Refl
+
+{-
+instance (BoolEquality f, BoolEquality g) => BoolEquality (f :*: g) where
+  (a :*: b) .== (c :*: d) = a .== c .&& b .== d
+-}
 
 instance (DecEquality f, DecEquality g) => DecEquality (f :*: g) where
   decideEquality (a :*: b) (c :*: d) = case decideEquality a c of

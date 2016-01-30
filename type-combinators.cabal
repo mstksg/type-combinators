@@ -1,5 +1,5 @@
 name: type-combinators
-version: 0.1.2.2
+version: 0.2.2.0
 category: Data
 synopsis: A collection of data types for type-level programming
 cabal-version: >=1.10
@@ -7,6 +7,7 @@ build-type: Simple
 license: BSD3
 license-file: LICENSE
 maintainer: kylcarte@gmail.com
+copyright: (c) 2015 Kyle Carter, all rights reserved
 author: Kyle Carter
 homepage: https://github.com/kylcarte/type-combinators
 
@@ -16,42 +17,38 @@ Source-Repository head
 
 library
     exposed-modules:
-        Test
-        Data.Type.Sym.Quote
-        Data.Type.Sym
-        Type.Family.Symbol
-        -- Data.Type.Cyclic
+        Data.Type.Boolean
         Data.Type.Combinator
         Data.Type.Conjunction
         Data.Type.Disjunction
         Data.Type.Fin
+        Data.Type.Fin.Indexed
         Data.Type.Index
-        Data.Type.Index.Quote
         Data.Type.Length
         Data.Type.Nat
-        Data.Type.Nat.Quote
+        Data.Type.Nat.Inequality
         Data.Type.Option
         Data.Type.Product
-        Data.Type.Product.Order2
+        Data.Type.Product.Lifted
         Data.Type.Sum
-        Data.Type.Sum.Order2
+        Data.Type.Sum.Lifted
+        Data.Type.Sym
         Data.Type.Quantifier
         Data.Type.Vector
-        Type.Class.HFunctor
+        Type.Class.Higher
         Type.Class.Known
         Type.Class.Witness
+        Type.Family.Bool
         Type.Family.Constraint
+        Type.Family.Either
         Type.Family.List
         Type.Family.Maybe
         Type.Family.Monoid
         Type.Family.Nat
+        Type.Family.Symbol
         Type.Family.Tuple
     build-depends:
-        base >=4.8 && <4.9,
-        containers,
-        template-haskell,
-        transformers,
-        mtl
+        base >=4.8 && <4.9
     default-language: Haskell2010
     hs-source-dirs: src
     ghc-options: -Wall -fno-warn-unticked-promoted-constructors

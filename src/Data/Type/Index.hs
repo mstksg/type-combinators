@@ -29,39 +29,11 @@
 
 module Data.Type.Index where
 
--- import Type.Class.Categories
+import Data.Type.Quantifier
+import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.List
-
-{-
-newtype Permutation :: [k] -> [k] -> * where
-  Perm :: { getPerm :: forall x. Index as x <-> Index bs x }
-       -> Permutation as bs
-
-instance Category Permutation where
-  id    = Perm $ id
-  g . f = Perm $ getPerm g . getPerm f
-
-instance Symmetric Permutation where
-  symm (Perm p) = Perm $ symm p
-
-liftPerm :: Permutation as bs -> Permutation (a :< as) (a :< bs)
-liftPerm (Perm p) = Perm $ liftIndex (fwd p) <-> liftIndex (bwd p)
--}
-
-liftIndex :: (Index as a -> Index bs a) -> Index (b :< as) a -> Index (b :< bs) a
-liftIndex f = \case
-  IZ   -> IZ
-  IS x -> IS $ f x
-
-class Indexed (r :: *) (s :: *) (as :: [k]) (bs :: [k])
-  | r -> as , s -> bs
-  , r as bs -> s
-  , s as bs -> r where
-  mapIndex :: (forall x. Index as x -> Index bs x) -> r -> s
-
--- Index {{{
 
 data Index :: [k] -> k -> * where
   IZ :: Index (a :< as) a
@@ -70,6 +42,20 @@ data Index :: [k] -> k -> * where
 deriving instance Eq   (Index as a)
 deriving instance Ord  (Index as a)
 deriving instance Show (Index as a)
+
+instance Eq1   (Index as)
+instance Ord1  (Index as)
+instance Show1 (Index as)
+
+instance Read2 Index where
+  readsPrec2 d = readParen (d > 10) $ \s0 ->
+    [ (Some2 IZ,s1)
+    | ("IZ",s1) <- lex s0
+    ] ++
+    [ (i >>-- Some2 . IS,s2)
+    | ("IS",s1) <- lex s0
+    , (i,s2)    <- readsPrec2 11 s1
+    ]
 
 instance TestEquality (Index as) where
   testEquality = \case
@@ -91,44 +77,15 @@ elimIndex z s = \case
 ixNil :: Index Ø a -> Void
 ixNil = impossible
 
--- }}}
-
--- Index2 {{{
-
-data Index2 :: [k] -> [l] -> k -> l -> * where
-  IZ2 :: Index2 (a :< as) (b :< bs) a b
-  IS2 :: !(Index2 as bs a b)
-      -> Index2 (c :< as) (d :< bs) a b
-
-deriving instance Eq   (Index2 as bs a b)
-deriving instance Ord  (Index2 as bs a b)
-deriving instance Show (Index2 as bs a b)
-
-ix2NilL :: Index2 Ø bs a b -> Void
-ix2NilL = impossible
-
-ix2NilR :: Index2 as Ø a b -> Void
-ix2NilR = impossible
-
-elimIndex2 :: ( forall   xs   ys. p (a :< xs) (b :< ys) a b)
-           -> ( forall x xs y ys.
-                Index2 xs ys a b
-             -> p xs ys a b
-             -> p (x :< xs) (y :< ys) a b
-              )
-           -> Index2 as bs a b
-           -> p as bs a b
-elimIndex2 z s = \case
-  IZ2   -> z
-  IS2 x -> s x $ elimIndex2 z s x
-
--- }}}
+onIxPred :: (Index as a -> Index bs a) -> Index (b :< as) a -> Index (b :< bs) a
+onIxPred f = \case
+  IZ   -> IZ
+  IS x -> IS $ f x
 
 -- Elem {{{
 
 type a ∈ as = Elem as a
 infix 6 ∈
-
 
 class Elem (as :: [k]) (a :: k) where
   elemIndex :: Index as a

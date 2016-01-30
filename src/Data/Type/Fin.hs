@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE PatternSynonyms #-}
@@ -5,7 +6,6 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE LambdaCase #-}
@@ -31,6 +31,7 @@
 module Data.Type.Fin where
 
 import Data.Type.Nat
+import Type.Class.Higher
 import Type.Class.Witness
 import Type.Family.Constraint
 import Type.Family.Nat
@@ -43,6 +44,20 @@ data Fin :: N -> * where
 deriving instance Eq   (Fin n)
 deriving instance Ord  (Fin n)
 deriving instance Show (Fin n)
+
+instance Eq1   Fin
+instance Ord1  Fin
+instance Show1 Fin
+
+instance Read1 Fin where
+  readsPrec1 d = readParen (d > 10) $ \s0 ->
+    [ (Some FZ,s1)
+    | ("FZ",s1) <- lex s0
+    ] ++ 
+    [ (n >>- Some . FS,s2)
+    | ("FS",s1) <- lex s0
+    , (n,s2)    <- readsPrec1 11 s1
+    ]
 
 elimFin :: (forall x. p (S x))
         -> (forall x. Fin x -> p x -> p (S x))
@@ -81,26 +96,6 @@ without = \case
   FS x -> \case
     FZ   -> Just FZ \\ x
     FS y -> FS <$> without x y \\ x
-
-class (x :: N) <= (y :: N) where
-  weakenN :: Fin x -> Fin y
-
-instance {-# OVERLAPPING #-} x <= x where
-  weakenN = id
-
-instance {-# OVERLAPPABLE #-} (x <= y) => x <= S y where
-  weakenN = weaken . weakenN
-
-{-
-instance Known Nat n => Known ([] :.: Fin) n where
-  type KnownC ([] :.: Fin) n = Known Nat n
-  known = Comp $ go (known :: Nat n)
-    where
-    go :: Nat x -> [Fin x]
-    go = \case
-      Z_   -> []
-      S_ x -> FZ : map FS (go x)
--}
 
 -- | Take a 'Fin' to an existentially quantified 'Nat'.
 finNat :: Fin x -> Some Nat

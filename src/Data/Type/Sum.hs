@@ -1,10 +1,10 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE LambdaCase #-}
@@ -32,11 +32,11 @@
 module Data.Type.Sum where
 
 import Data.Type.Index
+import Data.Type.Quantifier
 
-import Type.Class.HFunctor
+import Type.Class.Higher
 import Type.Class.Witness
 
-import Type.Family.Constraint
 import Type.Family.List
 
 data Sum (f :: k -> *) :: [k] -> * where
@@ -49,6 +49,42 @@ deriving instance
   , ListC (Ord  <$> f <$> as)
   ) => Ord  (Sum f as)
 deriving instance ListC (Show <$> f <$> as) => Show (Sum f as)
+
+instance Eq1 f => Eq1 (Sum f) where
+  eq1 = \case
+    InL a -> \case
+      InL b -> a =#= b
+      _     -> False
+    InR a -> \case
+      InR b -> a =#= b
+      _     -> False
+
+instance Ord1 f => Ord1 (Sum f) where
+  compare1 = \case
+    InL a -> \case
+      InL b -> compare1 a b
+      _     -> LT
+    InR a -> \case
+      InR b -> compare1 a b
+      _     -> GT
+
+instance Show1 f => Show1 (Sum f) where
+  showsPrec1 d = showParen (d > 10) . \case
+    InL a -> showString "InL "
+           . showsPrec1 11 a
+    InR b -> showString "InR "
+           . showsPrec1 11 b
+
+instance Read1 f => Read1 (Sum f) where
+  readsPrec1 d = readParen (d > 10) $ \s0 ->
+    [ (a >>- Some . InL,s2)
+    | ("InL",s1) <- lex s0
+    , (a,s2) <- readsPrec1 11 s1
+    ] ++
+    [ (a >>- Some . InR,s2)
+    | ("InR",s1) <- lex s0
+    , (a,s2) <- readsPrec1 11 s1
+    ]
 
 -- | There are no possible values of the type @Sum f Ø@.
 nilSum :: Sum f Ø -> Void
@@ -89,35 +125,35 @@ elimSum t n = \case
 
 -- instances {{{
 
-instance HFunctor Sum where
-  map' f = \case
+instance Functor1 Sum where
+  map1 f = \case
     InL a -> InL $ f a
-    InR s -> InR $ map' f s
+    InR s -> InR $ map1 f s
 
-instance HIxFunctor Index Sum where
-  imap' f = \case
+instance IxFunctor1 Index Sum where
+  imap1 f = \case
     InL a -> InL $ f IZ a
-    InR s -> InR $ imap' (f . IS) s
+    InR s -> InR $ imap1 (f . IS) s
 
-instance HFoldable Sum where
-  foldMap' f = \case
+instance Foldable1 Sum where
+  foldMap1 f = \case
     InL a -> f a
-    InR s -> foldMap' f s
+    InR s -> foldMap1 f s
 
-instance HIxFoldable Index Sum where
-  ifoldMap' f = \case
+instance IxFoldable1 Index Sum where
+  ifoldMap1 f = \case
     InL a -> f IZ a
-    InR s -> ifoldMap' (f . IS) s
+    InR s -> ifoldMap1 (f . IS) s
 
-instance HTraversable Sum where
-  traverse' f = \case
+instance Traversable1 Sum where
+  traverse1 f = \case
     InL a -> InL <$> f a
-    InR s -> InR <$> traverse' f s
+    InR s -> InR <$> traverse1 f s
 
-instance HIxTraversable Index Sum where
-  itraverse' f = \case
+instance IxTraversable1 Index Sum where
+  itraverse1 f = \case
     InL a -> InL <$> f IZ a
-    InR s -> InR <$> itraverse' (f . IS) s
+    InR s -> InR <$> itraverse1 (f . IS) s
 
 instance Witness p q (f a) => Witness p q (Sum f '[a]) where
   type WitnessC p q (Sum f '[a]) = Witness p q (f a)
@@ -130,23 +166,6 @@ instance (Witness p q (f a), Witness p q (Sum f (b :< as))) => Witness p q (Sum 
   (\\) r = \case
     InL a -> r \\ a
     InR s -> r \\ s
-
--- }}}
-
--- Constraints {{{
-
-data (:+) :: Constraint -> [Constraint] -> * where
-  Subs :: { getSubs :: a => Sum Wit as } -> a :+ as
-infixr 1 :+
-
-(>>+) :: forall a bs cs. a :+ bs -> (forall b. Index bs b -> b :+ cs) -> a :+ cs
-Subs ab >>+ f = Subs $ go f ab
-  where
-  go :: (forall x. Index xs x -> x :+ cs) -> Sum Wit xs -> Sum Wit cs
-  go g = \case
-    InL Wit -> getSubs $ g IZ
-    InR w   -> go (g . IS) w
-infixl 1 >>+
 
 -- }}}
 

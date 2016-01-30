@@ -1,10 +1,10 @@
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE LambdaCase #-}
@@ -29,6 +29,8 @@
 
 module Data.Type.Sym where
 
+import Data.Type.Boolean
+import Type.Class.Higher
 import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Constraint
@@ -38,13 +40,24 @@ import Data.Proxy
 data Sym :: Symbol -> * where
   Sym :: KnownSymbol x => Sym x
 
+deriving instance Eq   (Sym x)
+deriving instance Ord  (Sym x)
+
 instance Show (Sym x) where
   showsPrec d x = showParen (d > 0)
-    $ showString "Sym :: Sym "
+    $ showString "Sym "
     . shows (symbol x)
+
+instance Eq1   Sym
+instance Ord1  Sym
+instance Show1 Sym
 
 instance TestEquality Sym where
   testEquality Sym Sym = sameSymbol Proxy Proxy
+
+instance BoolEquality Sym where
+  type BoolEqC Sym a b = Known Boolean (a == b)
+  Sym .== Sym = known
 
 instance KnownSymbol x => Known Sym x where
   type KnownC Sym x = KnownSymbol x

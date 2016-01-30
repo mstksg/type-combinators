@@ -27,12 +27,11 @@
 --
 -----------------------------------------------------------------------------
 
-module Type.Family.Nat
-  ( module Type.Family.Nat
-  , type (==)
-  ) where
+module Type.Family.Nat where
 
 import Data.Type.Equality
+import Type.Family.Bool
+import Type.Family.Constraint
 import Type.Family.List
 import Type.Class.Witness
 
@@ -40,6 +39,12 @@ data N
   = Z
   | S N
   deriving (Eq,Ord,Show)
+
+fromInt :: Int -> Maybe N
+fromInt n = case compare n 0 of
+  LT -> Nothing
+  EQ -> Just Z
+  GT -> S <$> fromInt (n-1)
 
 type family IsZero (x :: N) :: Bool where
   IsZero Z     = True
@@ -108,6 +113,26 @@ type family Ix (x :: N) (as :: [k]) :: k where
 
 ixCong :: (x ~ y,as ~ bs) :- (Ix x as ~ Ix y bs)
 ixCong = Sub Wit
+
+type family (x :: N) < (y :: N) :: Bool where
+  Z   < Z   = False
+  Z   < S y = True
+  S x < Z   = False
+  S x < S y = x < y
+infix 4 <
+
+type x <= y = (x == y) || (x < y)
+infix 4 <=
+
+type family (x :: N) > (y :: N) :: Bool where
+  Z   > Z   = False
+  Z   > S y = False
+  S x > Z   = True
+  S x > S y = x > y
+infix 4 >
+
+type x >= y = (x == y) || (x > y)
+infix 4 >=
 
 -- | Convenient aliases for low-value Peano numbers.
 type N0  = Z

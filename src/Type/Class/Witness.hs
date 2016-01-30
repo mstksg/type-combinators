@@ -88,6 +88,9 @@ instance Category (:-) where
   id              = Sub Wit
   Sub bc . Sub ab = Sub $ bc \\ ab
 
+transC :: (b :- c) -> (a :- b) -> a :- c
+transC = (.)
+
 -- }}}
 
 -- Witness {{{
@@ -105,6 +108,10 @@ class WitnessC p q t => Witness (p :: Constraint) (q :: Constraint) (t :: *) | t
   type WitnessC p q t = ØC
   (\\) :: p => (q => r) -> t -> r
 infixl 1 \\
+
+(//) :: (Witness p q t, p) => t -> (q => r) -> r
+t // r = r \\ t
+infixr 0 //
 
 -- | Convert a 'Witness' to a canonical reified 'Constraint'.
 witnessed :: Witness ØC q t => t -> Wit q
@@ -172,6 +179,9 @@ class Forall (p :: k -> Constraint) (q :: k -> Constraint) where
 
 -- Initial/Terminal {{{
 
+toEquality :: (a ~ b) :- (c ~ d) -> a :~: b -> c :~: d
+toEquality p = \Refl -> Refl \\ p
+
 commute :: (a ~ b) :- (b ~ a)
 commute = Sub Wit
 
@@ -185,10 +195,10 @@ falso = Sub Wit
 top :: a :- ØC
 top = Sub Wit
 
-type Fail = (True ~ False)
-
 bottom :: Fail :- c
 bottom = falso
+
+
 
 instance Witness ØC c (Wit c) where
   r \\ Wit = r
@@ -221,6 +231,12 @@ instance c a => Known (Wit1 c) a where
   _      -> \_ -> Nothing
 infixr 0 //?
 
+(//?+) :: (Witness p q t, p) => Either e t -> (q => Either e r) -> Either e r
+(//?+) = \case
+  Left  e -> \_ -> Left e
+  Right t -> (\\ t)
+infixr 0 //?+
+
 witMaybe :: (Witness p q t, p) => Maybe t -> (q => Maybe r) -> Maybe r -> Maybe r
 witMaybe mt y n = case mt of
   Just t -> y \\ t
@@ -231,6 +247,14 @@ qed = Just Refl
 
 impossible :: a -> Void
 impossible = unsafeCoerce
+
+exFalso :: Wit Fail -> a
+exFalso p = castWith q ()
+  where
+  q :: () :~: a
+  q = toEquality (contraC r) Refl
+  r :: (b ~ b) :- Fail
+  r = Sub p
 
 (=?=) :: TestEquality f => f a -> f b -> Maybe (a :~: b)
 (=?=) = testEquality
