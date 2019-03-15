@@ -13,6 +13,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE NoStarIsType #-}
+{-# LANGUAGE TypeInType #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Type.Family.Nat
@@ -35,6 +37,7 @@ import Type.Family.Bool
 import Type.Family.Constraint
 import Type.Family.List
 import Type.Class.Witness
+import Data.Kind
 
 data N
   = Z
@@ -81,7 +84,7 @@ type family (x :: N) + (y :: N) :: N where
   S x + y = S (x + y)
 infixr 6 +
 
-data AddW (f :: N -> *) :: N -> * where
+data AddW (f :: N -> Type) :: N -> Type where
   AddW :: !(f x)
        -> !(f y)
        -> AddW f (x + y)
@@ -94,7 +97,7 @@ type family (x :: N) * (y :: N) :: N where
   S x * y = (x * y) + y
 infixr 7 *
 
-data MulW (f :: N -> *) :: N -> * where
+data MulW (f :: N -> Type) :: N -> Type where
   MulW :: !(f x)
        -> !(f y)
        -> MulW f (x * y)

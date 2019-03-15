@@ -12,6 +12,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE NoStarIsType #-}
+{-# LANGUAGE TypeInType #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Type.Nat
@@ -36,9 +38,10 @@ import Type.Class.Known
 import Type.Class.Witness
 import Type.Family.Constraint
 import Type.Family.Nat
+import Data.Kind
 -- import Type.Class.Categories
 
-data Nat :: N -> * where
+data Nat :: N -> Type where
   Z_ :: Nat Z
   S_ :: !(Nat n) -> Nat (S n)
 
